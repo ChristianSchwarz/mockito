@@ -135,6 +135,21 @@ public class VerificationAfterDelayTest {
         stopWatch.assertElapsedTimeIsMoreThan(200, MILLISECONDS);
         assertThat(captor.getAllValues()).containsExactly('0', '1', '2');
     }
+    
+    // This test should pass but it doesn't.
+    // This is because calling 'after(100).atLeast(2).atMost(3)' in current implementation
+    // returns exactly the same VerificationMode as calling 'after(100).atMost(3)'
+    @Test
+    public void shouldFailVerificationWithWrongTimesForAtLeastAtMost() throws Exception {
+        // given
+        callAsyncWithDelay(mock, '1', 20, MILLISECONDS);
+
+        // then
+        verify(mock, times(0)).oneArg('1');
+
+        exception.expect(MockitoAssertionError.class);
+        verify(mock, after(100).atLeast(2).atMost(3)).oneArg('1');
+    }
 
     private void exerciseMockNTimes(int n) {
         for (int i = 0; i < n; i++) {
