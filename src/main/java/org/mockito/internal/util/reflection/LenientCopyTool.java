@@ -4,10 +4,11 @@
  */
 package org.mockito.internal.util.reflection;
 
+import static org.mockito.internal.util.reflection.AccessibilityChanger.enableAccess;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
-@SuppressWarnings("unchecked")
 public class LenientCopyTool {
 
     FieldCopier fieldCopier = new FieldCopier();
@@ -35,14 +36,15 @@ public class LenientCopyTool {
             if (Modifier.isStatic(field.getModifiers())) {
                 continue;
             }
-            AccessibilityChanger accessibilityChanger = new AccessibilityChanger();
+            AccessibilityChanger accessChange = null;
             try {
-                accessibilityChanger.enableAccess(field);
+                accessChange = enableAccess(field);
                 fieldCopier.copyValue(from, mock, field);
             } catch (Throwable t) {
                 //Ignore - be lenient - if some field cannot be copied then let's be it
             } finally {
-                accessibilityChanger.safelyDisableAccess(field);
+                if (accessChange != null)
+                    accessChange.undo();
             }
         }
     }

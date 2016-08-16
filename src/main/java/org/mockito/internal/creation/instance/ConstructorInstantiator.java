@@ -1,6 +1,8 @@
 package org.mockito.internal.creation.instance;
 
 import static org.mockito.internal.util.StringJoiner.join;
+import static org.mockito.internal.util.reflection.AccessibilityChanger.enableAccess;
+
 import java.lang.reflect.Constructor;
 import org.mockito.internal.util.reflection.AccessibilityChanger;
 
@@ -37,8 +39,7 @@ public class ConstructorInstantiator implements Instantiator {
 
     @SuppressWarnings("unchecked")
     private static <T> T invokeConstructor(Constructor<?> constructor, Object... params) throws java.lang.InstantiationException, IllegalAccessException, java.lang.reflect.InvocationTargetException {
-        AccessibilityChanger accessibility = new AccessibilityChanger();
-        accessibility.enableAccess(constructor);
+         enableAccess(constructor);
         return (T) constructor.newInstance(params);
     }
 

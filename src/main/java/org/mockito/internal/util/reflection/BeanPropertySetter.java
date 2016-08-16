@@ -4,6 +4,8 @@
  */
 package org.mockito.internal.util.reflection;
 
+import static org.mockito.internal.util.reflection.AccessibilityChanger.enableAccess;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -50,12 +52,12 @@ public class BeanPropertySetter {
      */
     public boolean set(final Object value) {
 
-        AccessibilityChanger changer = new AccessibilityChanger();
+        AccessibilityChanger accessChange = null ;
         Method writeMethod = null;
         try {
             writeMethod = target.getClass().getMethod(setterName(field.getName()), field.getType());
 
-            changer.enableAccess(writeMethod);
+            accessChange= enableAccess(writeMethod);
             writeMethod.invoke(target, value);
             return true;
         } catch (InvocationTargetException e) {
@@ -65,8 +67,8 @@ public class BeanPropertySetter {
         } catch (NoSuchMethodException e) {
             reportNoSetterFound();
         } finally {
-            if(writeMethod != null) {
-                changer.safelyDisableAccess(writeMethod);
+            if(accessChange != null) {
+                accessChange.undo();
             }
         }
 
