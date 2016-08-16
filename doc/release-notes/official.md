@@ -1,3 +1,59 @@
+### 2.0.106-beta (2016-08-16 10:26 UTC)
+
+* Authors: 2
+* Commits: 3
+  * 2: Brice Dutheil
+  * 1: Continuous Delivery Drone
+* Improvements: 2
+  * Fixes #554 : Checks.checkNotNull now throws IAE instead of NPE [(#560)](https://github.com/mockito/mockito/pull/560)
+  * Checks.checkNotNull should emit IllegalArgumentException instead of NPE [(#554)](https://github.com/mockito/mockito/issues/554)
+
+### 2.0.105-beta (2016-08-16 08:27 UTC)
+
+* Authors: 3
+* Commits: 3
+  * 1: Continuous Delivery Drone
+  * 1: Brice Dutheil
+  * 1: Tim van der Lippe
+* Improvements: 1
+  * Deprecate whitebox and corresponding verboserunner and junitfailureha… [(#491)](https://github.com/mockito/mockito/pull/491)
+
+### 2.0.104-beta (2016-08-16 02:45 UTC)
+
+* Authors: 2
+* Commits: 3
+  * 2: Szczepan Faber
+  * 1: Continuous Delivery Drone
+* Improvements: 2
+  * JUnit rules report unused stubs - fixes #384 [(#555)](https://github.com/mockito/mockito/pull/555)
+  * JUnit rule logs warnings about unsued / misused stubs [(#384)](https://github.com/mockito/mockito/issues/384)
+
+### 2.0.103-beta (2016-08-15 15:57 UTC)
+
+* Authors: 5
+* Commits: 5
+  * 1: Continuous Delivery Drone
+  * 1: Jeffrey Falgout
+  * 1: Marcin Zajączkowski
+  * 1: Tim van der Lippe
+  * 1: Tim van der Lippe
+* Improvements: 4
+  * Replace or remove code.google.com links in documentation [(#557)](https://github.com/mockito/mockito/pull/557)
+  * Move Mockito internal classes to internal package [(#556)](https://github.com/mockito/mockito/pull/556)
+  * Fully register a class' ancestry for GenericMetadataSupport. [(#549)](https://github.com/mockito/mockito/pull/549)
+  * DEEP_STUBS tries to mock final class [(#497)](https://github.com/mockito/mockito/issues/497)
+
+### 2.0.102-beta (2016-08-15 13:27 UTC)
+
+* Authors: 3
+* Commits: 3
+  * 1: Continuous Delivery Drone
+  * 1: Brice Dutheil
+  * 1: Christian Schwarz
+* Improvements: 2
+  * Fixed #538 changed error message in case initialization for mock injection fails. [(#550)](https://github.com/mockito/mockito/pull/550)
+  * Improve error message when @InjectMocks is uses on an interface or enum field [(#538)](https://github.com/mockito/mockito/issues/538)
+
 ### 2.0.101-beta (2016-08-13 18:05 UTC)
 
 * Authors: 3

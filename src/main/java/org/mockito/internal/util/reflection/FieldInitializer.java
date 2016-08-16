@@ -8,7 +8,9 @@ import org.mockito.exceptions.base.MockitoException;
 import org.mockito.internal.util.MockUtil;
 
 import static org.mockito.internal.util.reflection.AccessibilityChanger.enableAccess;
+import static java.lang.reflect.Modifier.isStatic;
 import static org.mockito.internal.util.reflection.FieldSetter.setField;
+
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
