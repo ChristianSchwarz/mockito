@@ -9,6 +9,7 @@ import org.mockito.internal.creation.MockSettingsImpl;
 import org.mockito.internal.debugging.MockitoDebuggerImpl;
 import org.mockito.internal.framework.DefaultMockitoFramework;
 import org.mockito.internal.session.DefaultMockitoSessionBuilder;
+import org.mockito.internal.stubbing.OngoingVoidStubbingImpl;
 import org.mockito.internal.verification.VerificationModeFactory;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -1597,7 +1598,7 @@ public class Mockito extends ArgumentMatchers {
      * @return mock object
      */
     public static <T> T mock(Class<T> classToMock) {
-        return mock(classToMock, withSettings());
+        return mock(classToMock, withSettings().defaultAnswer(RETURNS_DEFAULTS));
     }
 
     /**
@@ -1869,6 +1870,10 @@ public class Mockito extends ArgumentMatchers {
      */
     public static <T> OngoingStubbing<T> when(T methodCall) {
         return MOCKITO_CORE.when(methodCall);
+    }
+    
+    public static OngoingVoidStubbing when(VoidCall methodCall){
+        return new OngoingVoidStubbingImpl(methodCall);
     }
 
     /**
