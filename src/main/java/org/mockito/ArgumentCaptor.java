@@ -4,10 +4,12 @@
  */
 package org.mockito;
 
+import static java.util.Collections.unmodifiableList;
+import static org.mockito.internal.exceptions.Reporter.noArgumentValueWasCaptured;
 import static org.mockito.internal.util.Primitives.defaultValue;
 
+import java.util.LinkedList;
 import java.util.List;
-
 import org.mockito.internal.matchers.CapturingMatcher;
 
 /**
@@ -62,9 +64,11 @@ import org.mockito.internal.matchers.CapturingMatcher;
 public class ArgumentCaptor<T> {
     
 
-    private final CapturingMatcher<T> capturingMatcher = new CapturingMatcher<T>();
+    
     private final Class<? extends T> clazz;
 
+    private final LinkedList<T> arguments = new LinkedList<T>();
+    
     private ArgumentCaptor(Class<? extends T> clazz) {
         this.clazz = clazz;
     }
@@ -80,7 +84,7 @@ public class ArgumentCaptor<T> {
      * @return null or default values
      */
     public T capture() {
-        Mockito.argThat(capturingMatcher);
+        Mockito.argThat(new CapturingMatcher<T>(arguments));
         return defaultValue(clazz);
     }
 
@@ -94,7 +98,11 @@ public class ArgumentCaptor<T> {
      * @return captured argument value
      */
     public T getValue() {
-        return this.capturingMatcher.getLastValue();
+        if (arguments.isEmpty()) {
+            throw noArgumentValueWasCaptured();
+        }
+        
+        return (T) arguments.getLast();
     }
 
     /**
@@ -130,7 +138,7 @@ public class ArgumentCaptor<T> {
      * @return captured argument value
      */
     public List<T> getAllValues() {
-        return this.capturingMatcher.getAllValues();
+        return unmodifiableList(arguments);
     }
 
     /**
@@ -148,4 +156,5 @@ public class ArgumentCaptor<T> {
     public static <U,S extends U> ArgumentCaptor<U> forClass(Class<S> clazz) {
         return new ArgumentCaptor<U>(clazz);
     }
+    
 }

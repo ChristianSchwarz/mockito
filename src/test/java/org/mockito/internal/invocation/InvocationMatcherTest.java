@@ -15,6 +15,7 @@ import static org.mockito.internal.matchers.Any.ANY;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import org.assertj.core.api.Assertions;
@@ -121,15 +122,16 @@ public class InvocationMatcherTest extends TestBase {
     public void should_capture_arguments_from_invocation() throws Exception {
         //given
         Invocation invocation = new InvocationBuilder().args("1", 100).toInvocation();
-        CapturingMatcher capturingMatcher = new CapturingMatcher();
+        List<Object> arguments = new LinkedList<Object>();
+        CapturingMatcher capturingMatcher = new CapturingMatcher(arguments);
         InvocationMatcher invocationMatcher = new InvocationMatcher(invocation, (List) asList(new Equals("1"), capturingMatcher));
 
         //when
         invocationMatcher.captureArgumentsFrom(invocation);
 
         //then
-        assertEquals(1, capturingMatcher.getAllValues().size());
-        assertEquals(100, capturingMatcher.getLastValue());
+        assertEquals(1, arguments.size());
+        assertEquals(100, arguments.get(arguments.size()-1));
     }
 
     @Test
@@ -151,14 +153,15 @@ public class InvocationMatcherTest extends TestBase {
         //given
         mock.mixedVarargs(1, "a", "b");
         Invocation invocation = getLastInvocation();
-        CapturingMatcher m = new CapturingMatcher();
+        List<Object> arguments = new LinkedList<Object>();
+        CapturingMatcher m = new CapturingMatcher(arguments);
         InvocationMatcher invocationMatcher = new InvocationMatcher(invocation, Arrays.<ArgumentMatcher>asList(new Equals(1), m));
 
         //when
         invocationMatcher.captureArgumentsFrom(invocation);
 
         //then
-        Assertions.assertThat(m.getAllValues()).containsExactly("a", "b");
+        assertThat(arguments).containsExactly("a", "b");
     }
 
     @Test  // like using several time the captor in the vararg

@@ -4,41 +4,31 @@
  */
 package org.mockito.internal.matchers;
 
+import java.io.Serializable;
+import java.util.List;
 import org.mockito.ArgumentMatcher;
 
-import static org.mockito.internal.exceptions.Reporter.noArgumentValueWasCaptured;
-
-import java.io.Serializable;
-import java.util.LinkedList;
-import java.util.List;
-
-@SuppressWarnings("unchecked")
+@SuppressWarnings({ "unchecked", "serial" })
 public class CapturingMatcher<T> implements ArgumentMatcher<T>, CapturesArguments, VarargMatcher, Serializable {
     
-    private final LinkedList<Object> arguments = new LinkedList<Object>();
+    private final List<T> arguments;
 
+    public CapturingMatcher(List<T> arguments  ) {
+        this.arguments = arguments;
+    }
+    
+    @Override
     public boolean matches(Object argument) {
         return true;
     }    
 
+    @Override
     public String toString() {
         return "<Capturing argument>";
     }
 
-    public T getLastValue() {
-        if (arguments.isEmpty()) {
-            throw noArgumentValueWasCaptured();
-        }
-        
-        return (T) arguments.getLast();
-        
-    }
-
-    public List<T> getAllValues() {
-        return (List) arguments;
-    }
-
+    @Override
     public void captureFrom(Object argument) {
-        this.arguments.add(argument);
+        this.arguments.add((T) argument);
     }
 }
