@@ -1,4 +1,3 @@
-include 'testng'
 include 'extTest'
 include 'android'
 
