@@ -1196,6 +1196,11 @@ public class ArgumentMatchers {
         reportMatcher(matcher);
         return null;
     }
+    
+    public static <T> T capture(ArgumentMatcher<T> matcher, Collection<T> target){
+    	
+    	return null;
+    }
 
     /**
      * Allows creating custom <code>char</code> argument matchers.

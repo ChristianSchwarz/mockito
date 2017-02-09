@@ -1,12 +1,15 @@
 package org.mockito.internal.stubbing;
 
 import static org.mockito.AdditionalAnswers.answerVoid;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.internal.progress.ThreadSafeMockingProgress.mockingProgress;
 
 import java.util.List;
 
+import org.mockito.Mockito;
 import org.mockito.VoidCall;
 import org.mockito.exceptions.base.MockitoException;
+import org.mockito.internal.progress.MockingProgress;
 import org.mockito.invocation.Invocation;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -24,8 +27,9 @@ public class OngoingVoidStubbingImpl implements OngoingVoidStubbing {
     private OngoingStubbing<Object> ongoingStubbing;
 
     public OngoingVoidStubbingImpl(VoidCall methodCall) {
+    	
         ongoingStubbing = execute(methodCall);
-
+        mockingProgress().stubbingStarted();
         checkExactlyOneCallOnMockWasMade(ongoingStubbing);
     }
 
@@ -106,22 +110,41 @@ public class OngoingVoidStubbingImpl implements OngoingVoidStubbing {
     }
 
     private static void checkExactlyOneCallOnMockWasMade(OngoingStubbing<Object> ongoingStubbing) {
-        List<Invocation> allInvocations = ((OngoingStubbingImpl<?>) ongoingStubbing).getRegisteredInvocations();
-        if (allInvocations.size() > 1) {
-            throw new MockitoException("Too many mock methods were called! Expected exactly one call to mock: " + ongoingStubbing.getMock() + "! Got: " + allInvocations);
+    	if (ongoingStubbing==null){
+    		throw missingMockInvocations();
+    	}
+        OngoingStubbingImpl<?> stubbing = (OngoingStubbingImpl<?>) ongoingStubbing;
+		List<Invocation> allInvocations = stubbing.getRegisteredInvocations();
+        if (allInvocations.isEmpty()){
+        	throw missingMockInvocations();
         }
-        if (allInvocations.size() < 1) {
-            throw new MockitoException("No mock method called was called! Expected exactly one call to mock: " + ongoingStubbing.getMock() + "! Got: " + allInvocations);
+		
+		if (allInvocations.size() > 1) {
+        	for (Invocation invocation : allInvocations) {
+        		clearInvocations(invocation.getMock());
+			}
+        	
+            throw tooManyMockInvocations(ongoingStubbing, allInvocations);
         }
     }
 
+	private static MockitoException tooManyMockInvocations(OngoingStubbing<Object> ongoingStubbing,
+			List<Invocation> allInvocations) {
+		return new MockitoException("Too many mock methods were called! Expected exactly one call to mock: " + ongoingStubbing.getMock() + "! Got: " + allInvocations);
+	}
+
+	private static MockitoException missingMockInvocations() {
+		return new MockitoException("No mock method was called! Expected exactly one call to mock.");
+	}
+
     @SuppressWarnings("unchecked")
     private static OngoingStubbing<Object> execute(VoidCall methodCall) {
+    	
         try {
             methodCall.run();
         } catch (Throwable mustNotHappen) {
-            throw new MockitoException("Unexpected exception was thrown from: " + methodCall);
+            throw new MockitoException("Unexpected exception was thrown from: " + methodCall,mustNotHappen);
         }
-        return (OngoingStubbing<Object>) mockingProgress().pullOngoingStubbing();
+		return (OngoingStubbing<Object>) mockingProgress.pullOngoingStubbing();
     }
 }

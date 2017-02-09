@@ -133,17 +133,13 @@ public class InvocationMatcher implements MatchableInvocation, DescribedInvocati
     }
 
     private ArgumentMatcherAction captureArgument() {
-        return new ArgumentMatcherAction() {
-            
-            @Override
-            public boolean apply(ArgumentMatcher<?> matcher, Object argument) {
-                if (matcher instanceof CapturesArguments) {
-                    ((CapturesArguments) matcher).captureFrom(argument);
-                }
-                
-                return true;
-            }
-        };
+        return (matcher, argument) -> {
+		    if (matcher instanceof CapturesArguments) {
+		        ((CapturesArguments) matcher).captureFrom(argument);
+		    }
+		    
+		    return true;
+		};
     }
     
     @SuppressWarnings({ "rawtypes", "unchecked" })

@@ -4,6 +4,8 @@
  */
 package org.mockito;
 
+import org.mockito.internal.util.reflection.ArgumentMatcherUtil;
+
 /**
  * Allows creating customized argument matchers.
  * This API was changed in Mockito 2.1.0 in an effort to decouple Mockito from Hamcrest
@@ -110,6 +112,7 @@ package org.mockito;
  * @param <T> type of argument
  * @since 2.1.0
  */
+@FunctionalInterface
 public interface ArgumentMatcher<T> {
 
     /**
@@ -125,4 +128,9 @@ public interface ArgumentMatcher<T> {
      * @return true if this matcher accepts the given argument.
      */
     boolean matches(T argument);
+    
+    @SuppressWarnings("unchecked")
+	default Class<T> supportedArgumentType(){
+    	return (Class<T>) ArgumentMatcherUtil.getArgumentType(this);
+    }
 }
