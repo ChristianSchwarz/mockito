@@ -34,12 +34,16 @@ public class OngoingStubbingImpl<T> extends BaseStubbing<T> {
     }
 
     public List<Invocation> getRegisteredInvocations() {
-        //TODO interface for tests
         return invocationContainerImpl.getInvocations();
     }
 
     @SuppressWarnings("unchecked")
     public <M> M getMock() {
         return (M) invocationContainerImpl.invokedMock();
+    }
+    
+    @Override
+    public String toString() {
+    	return invocationContainerImpl.toString();
     }
 }

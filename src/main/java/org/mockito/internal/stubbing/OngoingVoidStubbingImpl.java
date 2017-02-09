@@ -1,16 +1,14 @@
 package org.mockito.internal.stubbing;
 
 import static org.mockito.AdditionalAnswers.answerVoid;
-import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.internal.progress.ThreadSafeMockingProgress.mockingProgress;
 
-import java.util.List;
+import java.util.Deque;
+import java.util.LinkedList;
 
-import org.mockito.Mockito;
 import org.mockito.VoidCall;
 import org.mockito.exceptions.base.MockitoException;
-import org.mockito.internal.progress.MockingProgress;
-import org.mockito.invocation.Invocation;
+import org.mockito.internal.progress.OngoingStubbingListener;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.mockito.stubbing.OngoingStubbing;
@@ -24,13 +22,20 @@ import org.mockito.stubbing.VoidAnswer4;
 import org.mockito.stubbing.VoidAnswer5;
 
 public class OngoingVoidStubbingImpl implements OngoingVoidStubbing {
-    private OngoingStubbing<Object> ongoingStubbing;
+    private OngoingStubbing<?> ongoingStubbing;
 
     public OngoingVoidStubbingImpl(VoidCall methodCall) {
     	
-        ongoingStubbing = execute(methodCall);
+        Deque<OngoingStubbing<?>> stubbings = execute(methodCall);
+        if (stubbings.isEmpty()){
+			throw missingMockInvocations();
+		}
+		if (stubbings.size()>1){
+			throw tooManyMockInvocations( stubbings);
+		}
+		ongoingStubbing = stubbings.getFirst();
         mockingProgress().stubbingStarted();
-        checkExactlyOneCallOnMockWasMade(ongoingStubbing);
+        
     }
 
     @Override
@@ -109,42 +114,38 @@ public class OngoingVoidStubbingImpl implements OngoingVoidStubbing {
         return ongoingStubbing.getMock();
     }
 
-    private static void checkExactlyOneCallOnMockWasMade(OngoingStubbing<Object> ongoingStubbing) {
-    	if (ongoingStubbing==null){
-    		throw missingMockInvocations();
-    	}
-        OngoingStubbingImpl<?> stubbing = (OngoingStubbingImpl<?>) ongoingStubbing;
-		List<Invocation> allInvocations = stubbing.getRegisteredInvocations();
-        if (allInvocations.isEmpty()){
-        	throw missingMockInvocations();
-        }
-		
-		if (allInvocations.size() > 1) {
-        	for (Invocation invocation : allInvocations) {
-        		clearInvocations(invocation.getMock());
-			}
-        	
-            throw tooManyMockInvocations(ongoingStubbing, allInvocations);
-        }
-    }
+    
 
-	private static MockitoException tooManyMockInvocations(OngoingStubbing<Object> ongoingStubbing,
-			List<Invocation> allInvocations) {
-		return new MockitoException("Too many mock methods were called! Expected exactly one call to mock: " + ongoingStubbing.getMock() + "! Got: " + allInvocations);
+	private static MockitoException tooManyMockInvocations(Deque<OngoingStubbing<?>> s) {
+		return new MockitoException("Too many mock methods were called! Expected exactly one call to a mock. Got: " + s);
 	}
 
 	private static MockitoException missingMockInvocations() {
-		return new MockitoException("No mock method was called! Expected exactly one call to mock.");
+		return new MockitoException("No mock method was called! Expected exactly one call to a mock.");
 	}
 
-    @SuppressWarnings("unchecked")
-    private static OngoingStubbing<Object> execute(VoidCall methodCall) {
-    	
+    private static Deque<OngoingStubbing<?>> execute(VoidCall methodCall) {
+    
+    	StubbingListener listener = new StubbingListener();
+		mockingProgress().addListener(listener);
         try {
             methodCall.run();
         } catch (Throwable mustNotHappen) {
             throw new MockitoException("Unexpected exception was thrown from: " + methodCall,mustNotHappen);
-        }
-		return (OngoingStubbing<Object>) mockingProgress.pullOngoingStubbing();
+        } finally {
+			mockingProgress().removeListener(listener);
+		}
+        
+		return listener.stubbings;
     }
+
+	private static class StubbingListener implements OngoingStubbingListener{
+		private Deque<OngoingStubbing<?>> stubbings = new LinkedList<OngoingStubbing<?>>();
+		@Override
+		public void onOngoingStubbing(OngoingStubbing<?> ongoingStubbing) {
+		
+				stubbings.add(ongoingStubbing);
+		
+		}
+	}
 }

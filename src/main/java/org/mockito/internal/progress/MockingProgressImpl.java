@@ -49,9 +49,20 @@ public class MockingProgressImpl implements MockingProgress {
 
     public void reportOngoingStubbing(OngoingStubbing iOngoingStubbing) {
         this.ongoingStubbing = iOngoingStubbing;
+        fireOngoingStubbing(ongoingStubbing);
     }
 
-    public OngoingStubbing<?> pullOngoingStubbing() {
+    private void fireOngoingStubbing(OngoingStubbing<?> ongoingStubbing) {
+		for(MockitoListener l:listeners){
+			if (l instanceof OngoingStubbingListener) {
+				OngoingStubbingListener listener = (OngoingStubbingListener) l;
+				listener.onOngoingStubbing(ongoingStubbing);
+			}
+		}
+		
+	}
+
+	public OngoingStubbing<?> pullOngoingStubbing() {
         OngoingStubbing<?> temp = ongoingStubbing;
         ongoingStubbing = null;
         return temp;

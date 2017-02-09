@@ -23,7 +23,7 @@ import org.mockito.junit.MockitoRule;
 import org.mockitousage.IMethods;
 
 public class VoidStubbingTest {
-
+//@formatter:off
 	@Rule
 	public MockitoRule mockito = rule();
 
@@ -45,9 +45,7 @@ public class VoidStubbingTest {
 
 	@Test
 	public void instanceReferenceStubbing() {
-		when(mock::voidMethod).then(() -> {
-			result.add(1);
-		});
+		when(mock::voidMethod).then(() -> result.add(1));
 
 		mock.voidMethod();
 
@@ -56,8 +54,9 @@ public class VoidStubbingTest {
 
 	@Test
 	public void consecutiveStubbing() throws Exception {
-		when(() -> mock.intArgumentMethod(5)).then((Integer a) -> result.add(a))
-				.then((Integer a) -> result.add(100 * a));
+		when(() -> mock.intArgumentMethod(5))
+		.then((Integer a) -> result.add(a))
+		.then((Integer a) -> result.add(100 * a));
 
 		mock.intArgumentMethod(5);
 		mock.intArgumentMethod(10);
@@ -104,7 +103,7 @@ public class VoidStubbingTest {
 			});
 
 		}).isInstanceOf(MockitoException.class).hasMessageContaining("Too many mock methods were called")
-				.hasMessageContaining("Expected exactly one call to mock: " + mock);
+				.hasMessageContaining("Expected exactly one call to a mock");
 
 	}
 
@@ -112,11 +111,11 @@ public class VoidStubbingTest {
 	public void noCallOnMock() {
 		assertThatThrownBy(() -> {
 
-			when(() -> {
-			});
+			when(() -> {});
 
-		}).isInstanceOf(MockitoException.class).hasMessageContaining("No mock method was called")
-				.hasMessageContaining("Expected exactly one call to mock");
+		}).isInstanceOf(MockitoException.class)
+		.hasMessageContaining("No mock method was called")
+		.hasMessageContaining("Expected exactly one call to a mock");
 
 	}
 
@@ -127,22 +126,20 @@ public class VoidStubbingTest {
 				mock.intArgumentMethod(5);
 				mock.intArgumentMethod(2);
 			});
-		} catch (MockitoException expected) {
-		}
+		} catch (MockitoException expected) {}
 
 		assertThatThrownBy(() -> {
-
-			when(() -> {
-			});
-
-		}).isInstanceOf(MockitoException.class).hasMessageContaining("No mock method was called")
-				.hasMessageContaining("Expected exactly one call to mock");
+			
+			when(() -> {});
+			
+		}).isInstanceOf(MockitoException.class)
+		.hasMessageContaining("No mock method was called")
+		.hasMessageContaining("Expected exactly one call to a mock");
 
 	}
 
 	@Test
 	public void noCallOnMock_afterTooManyCallsW2ereDetected() {
-
 		mock.intArgumentMethod(5);
 
 		when(mock::voidMethod).thenDoNothing();
