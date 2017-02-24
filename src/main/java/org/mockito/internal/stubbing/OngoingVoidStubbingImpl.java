@@ -8,7 +8,9 @@ import java.util.LinkedList;
 
 import org.mockito.VoidCall;
 import org.mockito.exceptions.base.MockitoException;
+import org.mockito.internal.progress.MockingProgressImpl;
 import org.mockito.internal.progress.OngoingStubbingListener;
+import org.mockito.internal.progress.ThreadSafeMockingProgress;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.mockito.stubbing.OngoingStubbing;
@@ -25,6 +27,7 @@ public class OngoingVoidStubbingImpl implements OngoingVoidStubbing {
     private OngoingStubbing<?> ongoingStubbing;
 
     public OngoingVoidStubbingImpl(VoidCall methodCall) {
+    	mockingProgress().validateState();
     	
         Deque<OngoingStubbing<?>> stubbings = execute(methodCall);
         if (stubbings.isEmpty()){
