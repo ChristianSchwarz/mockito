@@ -10,11 +10,13 @@ import java.util.LinkedList;
  * Streamlines testing async code for Mockito tests.
  *
  * Instances of this class are NOT thread safe (intentionally, they are not required to be thread safe)
+ *
+ * //TODO convert to test rule
  */
 public class AsyncTesting {
 
     //Sanity limit of threas. Increase it if justified.
-    private final static int MAX_THREADS = 3;
+    private final static int MAX_THREADS = 4;
 
     private final LinkedList<Exception> problems = new LinkedList<Exception>();
     private final LinkedList<Thread> threads = new LinkedList<Thread>();
