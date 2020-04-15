@@ -130,4 +130,6 @@ public interface MockCreationSettings<T> {
      */
     @Incubating
     boolean isLenient();
+
+    boolean isStaticMock();
 }

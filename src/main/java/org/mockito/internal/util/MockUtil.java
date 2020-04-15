@@ -42,6 +42,12 @@ public class MockUtil {
         return mock;
     }
 
+    public static <T> void mockStatic(Class<T> type){
+
+        MockHandler mockHandler =  createMockHandler(Mockito.withSettings().build(type));
+         mockMaker.createStaticMock(mockHandler);
+    }
+
     public static <T> void resetMock(T mock) {
         MockHandler oldHandler = getMockHandler(mock);
         MockCreationSettings settings = oldHandler.getMockSettings();

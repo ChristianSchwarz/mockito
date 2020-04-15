@@ -13,6 +13,7 @@ import java.lang.ref.SoftReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.concurrent.Callable;
 
 import net.bytebuddy.asm.Advice;
@@ -309,6 +310,27 @@ public class MockMethodAdvice extends MockMethodDispatcher {
             if (mockMethodAdvice != null) {
                 mockMethodAdvice.interceptors.put(thiz, thiz.getMockitoInterceptor());
             }
+        }
+    }
+
+    public static class ForStatic {
+        @Advice.OnMethodEnter(skipOn = Advice.OnNonDefaultValue.class)
+        public static Callable<?> enter(@Advice.Origin final Method method,
+                                        @Advice.AllArguments final Object[] arguments
+        ) throws Throwable {
+
+            System.out.println(method);
+            if (true) {
+                return null;
+            }
+
+            return new Callable<Object>() {
+                @Override
+                public Object call() throws Exception {
+                    System.out.println("-> " + Arrays.toString(arguments));
+                    return null;
+                }
+            };
         }
     }
 }

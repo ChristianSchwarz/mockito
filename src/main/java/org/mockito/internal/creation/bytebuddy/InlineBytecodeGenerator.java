@@ -4,18 +4,6 @@
  */
 package org.mockito.internal.creation.bytebuddy;
 
-import static net.bytebuddy.implementation.MethodDelegation.withDefaultConfiguration;
-import static net.bytebuddy.implementation.bind.annotation.TargetMethodAnnotationDrivenBinder.ParameterBinder.ForFixedValue.OfConstant.of;
-import static net.bytebuddy.matcher.ElementMatchers.*;
-import static org.mockito.internal.util.StringUtil.join;
-
-import java.lang.instrument.ClassFileTransformer;
-import java.lang.instrument.Instrumentation;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.security.ProtectionDomain;
-import java.util.*;
-
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.ClassFileVersion;
 import net.bytebuddy.asm.Advice;
@@ -42,21 +30,33 @@ import org.mockito.internal.util.concurrent.WeakConcurrentMap;
 import org.mockito.internal.util.concurrent.WeakConcurrentSet;
 import org.mockito.mock.SerializableMode;
 
+import java.lang.instrument.ClassFileTransformer;
+import java.lang.instrument.Instrumentation;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.security.ProtectionDomain;
+import java.util.*;
+
+import static net.bytebuddy.implementation.MethodDelegation.withDefaultConfiguration;
+import static net.bytebuddy.implementation.bind.annotation.TargetMethodAnnotationDrivenBinder.ParameterBinder.ForFixedValue.OfConstant.of;
+import static net.bytebuddy.matcher.ElementMatchers.*;
+import static org.mockito.internal.util.StringUtil.join;
+
 public class InlineBytecodeGenerator implements BytecodeGenerator, ClassFileTransformer {
 
     private static final String PRELOAD = "org.mockito.inline.preload";
 
     @SuppressWarnings("unchecked")
     static final Set<Class<?>> EXCLUDES = new HashSet<Class<?>>(Arrays.asList(Class.class,
-            Boolean.class,
-            Byte.class,
-            Short.class,
-            Character.class,
-            Integer.class,
-            Long.class,
-            Float.class,
-            Double.class,
-            String.class));
+        Boolean.class,
+        Byte.class,
+        Short.class,
+        Character.class,
+        Integer.class,
+        Long.class,
+        Float.class,
+        Double.class,
+        String.class));
 
     private final Instrumentation instrumentation;
     private final ByteBuddy byteBuddy;
@@ -75,26 +75,16 @@ public class InlineBytecodeGenerator implements BytecodeGenerator, ClassFileTran
             .with(TypeValidation.DISABLED)
             .with(Implementation.Context.Disabled.Factory.INSTANCE)
             .with(MethodGraph.Compiler.ForDeclaredMethods.INSTANCE);
+
         mocked = new WeakConcurrentSet<Class<?>>(WeakConcurrentSet.Cleaner.INLINE);
+
         String identifier = RandomString.make();
         subclassEngine = new TypeCachingBytecodeGenerator(new SubclassBytecodeGenerator(withDefaultConfiguration()
             .withBinders(of(MockMethodAdvice.Identifier.class, identifier))
             .to(MockMethodAdvice.ForReadObject.class), isAbstract().or(isNative()).or(isToString())), false);
-        mockTransformer = new AsmVisitorWrapper.ForDeclaredMethods()
-            .method(isVirtual()
-                    .and(not(isBridge().or(isHashCode()).or(isEquals()).or(isDefaultFinalizer())))
-                    .and(not(isDeclaredBy(nameStartsWith("java.")).<MethodDescription>and(isPackagePrivate()))),
-                Advice.withCustomMapping()
-                    .bind(MockMethodAdvice.Identifier.class, identifier)
-                    .to(MockMethodAdvice.class))
-            .method(isHashCode(),
-                Advice.withCustomMapping()
-                    .bind(MockMethodAdvice.Identifier.class, identifier)
-                    .to(MockMethodAdvice.ForHashCode.class))
-            .method(isEquals(),
-                Advice.withCustomMapping()
-                    .bind(MockMethodAdvice.Identifier.class, identifier)
-                    .to(MockMethodAdvice.ForEquals.class));
+
+        mockTransformer = createMockTransformer(identifier)
+        ;
         Method getModule, canRead, redefineModule;
         try {
             getModule = Class.class.getMethod("getModule");
@@ -111,6 +101,33 @@ public class InlineBytecodeGenerator implements BytecodeGenerator, ClassFileTran
         this.redefineModule = redefineModule;
         MockMethodDispatcher.set(identifier, new MockMethodAdvice(mocks, identifier));
         instrumentation.addTransformer(this, true);
+    }
+
+    private AsmVisitorWrapper.ForDeclaredMethods createMockTransformer(String identifier) {
+        AsmVisitorWrapper.ForDeclaredMethods transformer = new AsmVisitorWrapper.ForDeclaredMethods()
+            .method(isVirtual()
+                    .and(not(isBridge().or(isHashCode()).or(isEquals()).or(isDefaultFinalizer())))
+                    .and(not(isDeclaredBy(nameStartsWith("java.")).<MethodDescription>and(isPackagePrivate()))),
+                Advice.withCustomMapping()
+                    .bind(MockMethodAdvice.Identifier.class, identifier)
+                    .to(MockMethodAdvice.class))
+
+            .method(isHashCode(),
+                Advice.withCustomMapping()
+                    .bind(MockMethodAdvice.Identifier.class, identifier)
+                    .to(MockMethodAdvice.ForHashCode.class))
+
+            .method(isEquals(),
+                Advice.withCustomMapping()
+                    .bind(MockMethodAdvice.Identifier.class, identifier)
+                    .to(MockMethodAdvice.ForEquals.class));
+        transformer
+            .method(isStatic().and(not(isTypeInitializer())).and(not(isConstructor())),
+                Advice.withCustomMapping()
+                    .bind(MockMethodAdvice.Identifier.class, identifier)
+                    .to(MockMethodAdvice.ForStatic.class));
+
+        return transformer;
     }
 
     /**
@@ -153,8 +170,8 @@ public class InlineBytecodeGenerator implements BytecodeGenerator, ClassFileTran
         }
 
         return subclassingRequired ?
-                subclassEngine.mockClass(features) :
-                features.mockedType;
+            subclassEngine.mockClass(features) :
+            features.mockedType;
     }
 
     private <T> void triggerRetransformation(MockFeatures<T> features) {
@@ -218,9 +235,9 @@ public class InlineBytecodeGenerator implements BytecodeGenerator, ClassFileTran
 
     private <T> void checkSupportedCombination(boolean subclassingRequired, MockFeatures<T> features) {
         if (subclassingRequired
-                && !features.mockedType.isArray()
-                && !features.mockedType.isPrimitive()
-                && Modifier.isFinal(features.mockedType.getModifiers())) {
+            && !features.mockedType.isArray()
+            && !features.mockedType.isPrimitive()
+            && Modifier.isFinal(features.mockedType.getModifiers())) {
             throw new MockitoException("Unsupported settings with this type '" + features.mockedType.getName() + "'");
         }
     }
@@ -277,8 +294,8 @@ public class InlineBytecodeGenerator implements BytecodeGenerator, ClassFileTran
                                  int writerFlags,
                                  int readerFlags) {
             return implementationContext.getClassFileVersion().isAtLeast(ClassFileVersion.JAVA_V8)
-                    ? new ParameterAddingClassVisitor(classVisitor, new TypeDescription.ForLoadedType(type))
-                    : classVisitor;
+                ? new ParameterAddingClassVisitor(classVisitor, new TypeDescription.ForLoadedType(type))
+                : classVisitor;
         }
 
         private static class ParameterAddingClassVisitor extends ClassVisitor {
@@ -294,8 +311,8 @@ public class InlineBytecodeGenerator implements BytecodeGenerator, ClassFileTran
             public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
                 MethodVisitor methodVisitor = super.visitMethod(access, name, desc, signature, exceptions);
                 MethodList<?> methodList = typeDescription.getDeclaredMethods().filter((name.equals(MethodDescription.CONSTRUCTOR_INTERNAL_NAME)
-                        ? isConstructor()
-                        : ElementMatchers.<MethodDescription>named(name)).and(hasDescriptor(desc)));
+                    ? isConstructor()
+                    : ElementMatchers.<MethodDescription>named(name)).and(hasDescriptor(desc)));
                 if (methodList.size() == 1 && methodList.getOnly().getParameters().hasExplicitMetaData()) {
                     for (ParameterDescription parameterDescription : methodList.getOnly().getParameters()) {
                         methodVisitor.visitParameter(parameterDescription.getName(), parameterDescription.getModifiers());

@@ -26,6 +26,11 @@ public class ByteBuddyMockMaker implements ClassCreatingMockMaker {
     }
 
     @Override
+    public <T> void createStaticMock(MockHandler<T> mockHandler) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public <T> Class<? extends T> createMockType(MockCreationSettings<T> creationSettings) {
         return defaultByteBuddyMockMaker.createMockType(creationSettings);
     }

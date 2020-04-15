@@ -66,13 +66,19 @@ public class SubclassByteBuddyMockMaker implements ClassCreatingMockMaker {
     }
 
     @Override
+    public <T> void createStaticMock(MockHandler<T> mockHandler) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public <T> Class<? extends T> createMockType(MockCreationSettings<T> settings) {
         try {
             return cachingMockBytecodeGenerator.mockClass(MockFeatures.withMockFeatures(
                     settings.getTypeToMock(),
                     settings.getExtraInterfaces(),
                     settings.getSerializableMode(),
-                    settings.isStripAnnotations()
+                    settings.isStripAnnotations(),
+                false
             ));
         } catch (Exception bytecodeGenerationFailed) {
             throw prettifyFailure(settings, bytecodeGenerationFailed);

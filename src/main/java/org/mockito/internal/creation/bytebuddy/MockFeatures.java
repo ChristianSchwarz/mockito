@@ -15,18 +15,26 @@ class MockFeatures<T> {
     final Set<Class<?>> interfaces;
     final SerializableMode serializableMode;
     final boolean stripAnnotations;
+    final boolean isStaticMock;
 
-    private MockFeatures(Class<T> mockedType, Set<Class<?>> interfaces, SerializableMode serializableMode, boolean stripAnnotations) {
+    private MockFeatures(Class<T> mockedType,
+                         Set<Class<?>> interfaces,
+                         SerializableMode serializableMode,
+                         boolean stripAnnotations,
+                         boolean isStaticMock) {
         this.mockedType = mockedType;
         this.interfaces = Collections.unmodifiableSet(interfaces);
         this.serializableMode = serializableMode;
         this.stripAnnotations = stripAnnotations;
+        this.isStaticMock = isStaticMock;
     }
 
     public static <T> MockFeatures<T> withMockFeatures(Class<T> mockedType,
                                                        Set<Class<?>> interfaces,
                                                        SerializableMode serializableMode,
-                                                       boolean stripAnnotations) {
-        return new MockFeatures<T>(mockedType, interfaces, serializableMode, stripAnnotations);
+                                                       boolean stripAnnotations,
+                                                       boolean isStaticMock) {
+
+        return new MockFeatures<T>(mockedType, interfaces, serializableMode, stripAnnotations,isStaticMock);
     }
 }

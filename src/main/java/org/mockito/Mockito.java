@@ -12,6 +12,7 @@ import org.mockito.internal.creation.MockSettingsImpl;
 import org.mockito.internal.debugging.MockitoDebuggerImpl;
 import org.mockito.internal.framework.DefaultMockitoFramework;
 import org.mockito.internal.session.DefaultMockitoSessionBuilder;
+import org.mockito.internal.util.MockUtil;
 import org.mockito.internal.verification.VerificationModeFactory;
 import org.mockito.invocation.Invocation;
 import org.mockito.invocation.InvocationFactory;
@@ -3107,5 +3108,9 @@ public class Mockito extends ArgumentMatchers {
     @Incubating
     public static LenientStubber lenient() {
         return MOCKITO_CORE.lenient();
+    }
+
+    public static void mockStatic(Class<?> type){
+        MockUtil.mockStatic(type);
     }
 }

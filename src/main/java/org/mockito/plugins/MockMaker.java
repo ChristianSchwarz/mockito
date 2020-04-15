@@ -69,6 +69,8 @@ public interface MockMaker {
             MockHandler handler
     );
 
+    <T> void createStaticMock(MockHandler<T> mockHandler);
+
     /**
      * Returns the handler for the {@code mock}. <b>Do not</b> provide your own implementations at this time
      * because the work on the {@link MockHandler} api is not completed.
