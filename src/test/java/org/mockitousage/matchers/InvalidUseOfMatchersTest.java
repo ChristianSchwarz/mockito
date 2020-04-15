@@ -29,19 +29,6 @@ public class InvalidUseOfMatchersTest {
     private IMethods mock = Mockito.mock(IMethods.class);
 
     @Test
-    public void should_detect_wrong_number_of_matchers_when_stubbing() {
-        when(mock.threeArgumentMethod(1, "2", "3")).thenReturn(null);
-        try {
-            when(mock.threeArgumentMethod(1, eq("2"), "3")).thenReturn(null);
-            fail();
-        } catch (InvalidUseOfMatchersException e) {
-            assertThat(e.getMessage())
-                    .contains("3 matchers expected")
-                    .contains("1 recorded");
-        }
-    }
-
-    @Test
     public void should_detect_stupid_use_of_matchers_when_verifying() {
         mock.oneArg(true);
         eq("that's the stupid way");
@@ -87,17 +74,7 @@ public class InvalidUseOfMatchersTest {
         }
     }
 
-    @Test
-    public void should_scream_when_Matchers_count_dont_match_parameter_count() {
-        try {
-            mock.threeArgumentMethod(1, "asd", eq("asd"));
-            fail();
-        } catch (InvalidUseOfMatchersException e) {
-            assertThat(e.getMessage())
-                    .contains("3 matchers expected")
-                    .contains("1 recorded");
-        }
-    }
+
 
     @Test
     public void should_mention_matcher_when_misuse_detected() {
@@ -118,6 +95,7 @@ public class InvalidUseOfMatchersTest {
 
     }
 
+
     @RunWith(MockitoJUnitRunner.class)
     public static class ObjectMatcherMisuseOnPrimitiveSite {
         @Test
@@ -125,7 +103,7 @@ public class InvalidUseOfMatchersTest {
             IMethods mock = Mockito.mock(IMethods.class);
             doNothing().when(mock)
                        .twoArgumentMethod(eq(73),
-                                          (Integer) any()); // <= Raise NPE on this call site
+                           (Integer) any()); // <= Raise NPE on this call site
         }
 
     }

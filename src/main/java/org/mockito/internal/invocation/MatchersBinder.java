@@ -16,9 +16,10 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static org.mockito.internal.exceptions.Reporter.invalidUseOfMatchers;
-import static org.mockito.internal.invocation.ArgumentsProcessor.argumentToMatcher;
-import static org.mockito.internal.invocation.ArgumentsProcessor.argumentsToMatchers;
-import static org.mockito.internal.invocation.MatchersBinder.RawValueDetector.isPossiblyRawValue;
+import static org.mockito.internal.invocation.ArgumentsProcessor.equalsMatcherOf;
+import static org.mockito.internal.invocation.ArgumentsProcessor.equalsMatchersOf;
+import static org.mockito.internal.invocation.MatchersBinder.MatcherMarkerValues.isMarkerValue;
+import static org.mockito.internal.util.Primitives.primitiveTypeOf;
 
 @SuppressWarnings("unchecked")
 public class MatchersBinder implements Serializable {
@@ -39,7 +40,7 @@ public class MatchersBinder implements Serializable {
         int argumentCount = invocation.getArguments().length;
 
         if (matcherCount == 0) {
-            return argumentsToMatchers(invocation.getArguments());
+            return equalsMatchersOf(invocation.getArguments());
         }
 
         if (matcherCount == argumentCount) {
@@ -62,29 +63,30 @@ public class MatchersBinder implements Serializable {
 
 
             Class<?> currentParamType = paramTypes[i];
-            Object curentParamValue = paramValues[i];
+            Object currentParamValue = paramValues[i];
 
-            if (isPossiblyRawValue(currentParamType, curentParamValue)) {
-                completedMatchers.add(argumentToMatcher(curentParamValue));
-            } else {
+            if (isMarkerValue(currentParamType, currentParamValue)) {
                 if (currentMatcher == null) {
                     //more arguments that matchers found
                     throw invalidUseOfMatchers(invocation.getArguments().length, localizedMatchers);
                 }
                 completedMatchers.add(currentMatcher);
                 currentMatcher = matchers.pollFirst();
+            } else {
+                //
+                completedMatchers.add(equalsMatcherOf(currentParamValue));
+
             }
 
         }
 
-        if (currentMatcher != null) { //all matchers have be consumed, otherwise too many matchers were specified
+        if (!matchers.isEmpty()) {
+            //more matchers that arguments were specified
             throw invalidUseOfMatchers(invocation.getArguments().length, localizedMatchers);
         }
 
         return completedMatchers;
     }
-
-
 
 
     private LinkedList<ArgumentMatcher> toMatchers(List<LocalizedMatcher> lastMatchers) {
@@ -96,23 +98,66 @@ public class MatchersBinder implements Serializable {
     }
 
 
-     static class RawValueDetector {
-        private static Integer INT_MARKER = 0; //Integer.MIN_VALUE+8;
+    public static class MatcherMarkerValues {
+        public final static Integer INT_MARKER = 0;
+        public final static Byte BYTE_MARKER = 0;
+        public final static Boolean BOOL_MARKER = false;
+        public final static Short SHORT_MARKER = 0;
+        public final static Long LONG_MARKER = 0L;
+        public final static Double DOUBLE_MARKER = 0D;
+        public final static Float FLOAT_MARKER = 0F;
+        public final static Character CHAR_MARKER = '\u0000';
 
-        static boolean isPossiblyRawValue(Class<?> currentParamType, Object currentParamValue) {
-            if  ((currentParamType == int.class || currentParamType == Integer.class) && (!INT_MARKER.equals(currentParamValue))){
-                return true;
-            }
-
-
-//            if (!isPrimitiveOrWrapper(currentParamType) && (currentParamValue!=null)){
-//                return true;
-//
-//            }
-
-            return false;
+        public static <T> T objectMarker() {
+            return null;
         }
 
+        public static boolean isMarkerValue(Class<?> type, Object value) {
+            Object markerValue = markerValueOf(type);
+            if (markerValue == objectMarker()) {
+                return value == objectMarker();
+            }
 
+            return markerValue.equals(value);
+        }
+
+        public static <T> T markerValueOf(T value) {
+            if (value == null) {
+               return objectMarker();
+            }
+            return (T)markerValueOf(value.getClass());
+        }
+
+        public static <T> T markerValueOf(Class<T> type) {
+
+            Class<?> primitiveType = primitiveTypeOf(type);
+            if (primitiveType == int.class) {
+                return (T) INT_MARKER;
+            }
+            if (primitiveType == byte.class) {
+                return (T) BYTE_MARKER;
+            }
+            if (primitiveType == boolean.class) {
+                return (T) BOOL_MARKER;
+            }
+            if (primitiveType == short.class) {
+                return (T) SHORT_MARKER;
+            }
+            if (primitiveType == long.class) {
+                return (T) LONG_MARKER;
+            }
+            if (primitiveType == double.class) {
+                return (T) DOUBLE_MARKER;
+            }
+            if (primitiveType == float.class) {
+                return (T) FLOAT_MARKER;
+            }
+            if (primitiveType == char.class) {
+                return (T) CHAR_MARKER;
+            }
+
+            return objectMarker();
+        }
     }
+
 }

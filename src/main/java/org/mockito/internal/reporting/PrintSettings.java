@@ -15,6 +15,8 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import static org.mockito.internal.invocation.ArgumentsProcessor.equalsMatchersOf;
+
 public class PrintSettings {
 
     public static final int MAX_LINE_LENGTH = 45;
@@ -55,7 +57,7 @@ public class PrintSettings {
     }
 
     public String print(Invocation invocation) {
-        return print(ArgumentsProcessor.argumentsToMatchers(invocation.getArguments()), invocation);
+        return print(equalsMatchersOf(invocation.getArguments()), invocation);
     }
 
     public String print(MatchableInvocation invocation) {

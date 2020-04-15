@@ -17,6 +17,8 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.verify;
+import static org.mockito.internal.invocation.MatchersBinder.MatcherMarkerValues.INT_MARKER;
+import static org.mockito.internal.invocation.MatchersBinder.MatcherMarkerValues.objectMarker;
 
 public class MatchersMixedWithRawArgumentsTest {
 
@@ -83,12 +85,12 @@ public class MatchersMixedWithRawArgumentsTest {
      */
     @Test
     public void int7_markerValueClash() {
-        mock.int_String_int(0, "b", 3);
+        mock.int_String_int(INT_MARKER, "b", 3);
 
         assertThatThrownBy(new ThrowingCallable() {
             public void call() {
 
-                verify(mock).int_String_int(0, anyString(), anyInt());
+                verify(mock).int_String_int(INT_MARKER, anyString(), anyInt());
 
             }
         })
@@ -107,7 +109,7 @@ public class MatchersMixedWithRawArgumentsTest {
     public void int9() {
         mock.int_Integer(1, 1);
 
-        verify(mock).int_Integer( anyInt(),1);
+        verify(mock).int_Integer(anyInt(), 1);
     }
 
 
@@ -115,7 +117,7 @@ public class MatchersMixedWithRawArgumentsTest {
     public void int10() {
         mock.int_Integer(1, null);
 
-        verify(mock).int_Integer( anyInt(),null);
+        verify(mock).int_Integer(anyInt(), null);
     }
 
     @Test
@@ -127,5 +129,24 @@ public class MatchersMixedWithRawArgumentsTest {
                 verify(mock).int_Integer(anyInt(), eq(1));
             }
         }).hasMessageContaining("Argument(s) are different!");
+    }
+
+    @Test
+    public void string1() {
+        mock.int_int_String(1, 2, null);
+
+        assertThatThrownBy(new ThrowingCallable() {
+            public void call() {
+                verify(mock).int_int_String(1, 2, anyString());
+            }
+        }).hasMessageContaining("Argument(s) are different!");
+
+    }
+
+    @Test
+    public void string2() {
+        mock.int_int_String(1, 2, (String)objectMarker());
+
+        verify(mock).int_int_String(1, 2, (String)objectMarker());
     }
 }

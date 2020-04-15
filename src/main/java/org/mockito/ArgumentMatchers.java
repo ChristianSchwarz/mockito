@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+
+import org.mockito.internal.invocation.MatchersBinder;
 import org.mockito.internal.matchers.Any;
 import org.mockito.internal.matchers.Contains;
 import org.mockito.internal.matchers.EndsWith;
@@ -25,6 +27,9 @@ import org.mockito.internal.matchers.StartsWith;
 import org.mockito.internal.matchers.apachecommons.ReflectionEquals;
 import org.mockito.internal.util.Primitives;
 
+import static org.mockito.internal.invocation.MatchersBinder.MatcherMarkerValues.INT_MARKER;
+import static org.mockito.internal.invocation.MatchersBinder.MatcherMarkerValues.markerValueOf;
+import static org.mockito.internal.invocation.MatchersBinder.MatcherMarkerValues.objectMarker;
 import static org.mockito.internal.progress.ThreadSafeMockingProgress.mockingProgress;
 import static org.mockito.internal.util.Primitives.defaultValue;
 
@@ -349,7 +354,7 @@ public class ArgumentMatchers {
      */
     public static int anyInt() {
         reportMatcher(new InstanceOf(Integer.class, "<any integer>"));
-        return 0;
+        return INT_MARKER;
     }
 
     /**
@@ -464,7 +469,7 @@ public class ArgumentMatchers {
      */
     public static String anyString() {
         reportMatcher(new InstanceOf(String.class, "<any string>"));
-        return "";
+        return objectMarker();
     }
 
     /**
@@ -902,7 +907,7 @@ public class ArgumentMatchers {
         reportMatcher(new Equals(value));
         if (value == null)
             return null;
-        return (T) Primitives.defaultValue(value.getClass());
+        return (T) markerValueOf(value.getClass());
     }
 
     /**

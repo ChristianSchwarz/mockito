@@ -7,6 +7,8 @@ package org.mockito.internal.handler;
 import org.mockito.internal.creation.settings.CreationSettings;
 import org.mockito.internal.invocation.InvocationMatcher;
 import org.mockito.internal.invocation.MatchersBinder;
+import org.mockito.internal.progress.ArgumentMatcherStorage;
+import org.mockito.internal.progress.MockingProgress;
 import org.mockito.internal.stubbing.InvocationContainerImpl;
 import org.mockito.internal.stubbing.OngoingStubbingImpl;
 import org.mockito.internal.stubbing.StubbedInvocationMatcher;
@@ -33,7 +35,7 @@ public class MockHandlerImpl<T> implements MockHandler<T> {
 
     InvocationContainerImpl invocationContainer;
 
-    MatchersBinder matchersBinder = new MatchersBinder();
+    MatchersBinder matchersBinder;
 
     private final MockCreationSettings<T> mockSettings;
 
@@ -45,23 +47,21 @@ public class MockHandlerImpl<T> implements MockHandler<T> {
     }
 
     public Object handle(Invocation invocation) throws Throwable {
+        MockingProgress mockingProgress = mockingProgress();
+        ArgumentMatcherStorage matchers = mockingProgress.getArgumentMatcherStorage();
         if (invocationContainer.hasAnswersForStubbing()) {
             // stubbing voids with doThrow() or doAnswer() style
-            InvocationMatcher invocationMatcher = matchersBinder.bindMatchers(
-                    mockingProgress().getArgumentMatcherStorage(),
-                    invocation
+
+            InvocationMatcher invocationMatcher = matchersBinder.bindMatchers(matchers, invocation
             );
             invocationContainer.setMethodForStubbing(invocationMatcher);
             return null;
         }
-        VerificationMode verificationMode = mockingProgress().pullVerificationMode();
+        VerificationMode verificationMode = mockingProgress.pullVerificationMode();
 
-        InvocationMatcher invocationMatcher = matchersBinder.bindMatchers(
-                mockingProgress().getArgumentMatcherStorage(),
-                invocation
-        );
+        InvocationMatcher invocationMatcher = matchersBinder.bindMatchers(matchers, invocation);
 
-        mockingProgress().validateState();
+        mockingProgress.validateState();
 
         // if verificationMode is not null then someone is doing verify()
         if (verificationMode != null) {
@@ -74,20 +74,20 @@ public class MockHandlerImpl<T> implements MockHandler<T> {
             } else {
                 // this means there is an invocation on a different mock. Re-adding verification mode
                 // - see VerifyingWithAnExtraCallToADifferentMockTest (bug 138)
-                mockingProgress().verificationStarted(verificationMode);
+                mockingProgress.verificationStarted(verificationMode);
             }
         }
 
         // prepare invocation for stubbing
         invocationContainer.setInvocationForPotentialStubbing(invocationMatcher);
         OngoingStubbingImpl<T> ongoingStubbing = new OngoingStubbingImpl<T>(invocationContainer);
-        mockingProgress().reportOngoingStubbing(ongoingStubbing);
+        mockingProgress.reportOngoingStubbing(ongoingStubbing);
 
         // look for existing answer for this invocation
         StubbedInvocationMatcher stubbing = invocationContainer.findAnswerFor(invocation);
         // TODO #793 - when completed, we should be able to get rid of the casting below
         notifyStubbedAnswerLookup(invocation, stubbing, invocationContainer.getStubbingsAscending(),
-                                  (CreationSettings) mockSettings);
+            (CreationSettings) mockSettings);
 
         if (stubbing != null) {
             stubbing.captureArgumentsFrom(invocation);
@@ -97,7 +97,7 @@ public class MockHandlerImpl<T> implements MockHandler<T> {
             } finally {
                 //Needed so that we correctly isolate stubbings in some scenarios
                 //see MockitoStubbedCallInAnswerTest or issue #1279
-                mockingProgress().reportOngoingStubbing(ongoingStubbing);
+                mockingProgress.reportOngoingStubbing(ongoingStubbing);
             }
         } else {
             Object ret = mockSettings.getDefaultAnswer().answer(invocation);

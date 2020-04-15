@@ -5,16 +5,10 @@
 
 package org.mockito;
 
-import static org.mockito.internal.progress.ThreadSafeMockingProgress.mockingProgress;
+import org.mockito.internal.matchers.*;
 
-import org.mockito.internal.matchers.ArrayEquals;
-import org.mockito.internal.matchers.CompareEqual;
-import org.mockito.internal.matchers.EqualsWithDelta;
-import org.mockito.internal.matchers.Find;
-import org.mockito.internal.matchers.GreaterOrEqual;
-import org.mockito.internal.matchers.GreaterThan;
-import org.mockito.internal.matchers.LessOrEqual;
-import org.mockito.internal.matchers.LessThan;
+import static org.mockito.internal.invocation.MatchersBinder.MatcherMarkerValues.markerValueOf;
+import static org.mockito.internal.progress.ThreadSafeMockingProgress.mockingProgress;
 
 /**
  * See {@link Matchers} for general info about matchers.
@@ -775,7 +769,7 @@ public class AdditionalMatchers {
      */
     public static <T> T or(T first, T second) {
         mockingProgress().getArgumentMatcherStorage().reportOr();
-        return null;
+        return markerValueOf(first);
     }
 
     /**
@@ -903,7 +897,7 @@ public class AdditionalMatchers {
      */
     public static <T> T not(T first) {
         mockingProgress().getArgumentMatcherStorage().reportNot();
-        return null;
+        return markerValueOf(first);
     }
 
     /**
