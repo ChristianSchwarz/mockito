@@ -198,14 +198,17 @@ public class InlineByteBuddyMockMaker implements ClassCreatingMockMaker, InlineM
     @Override
     public <T> void createStaticMock(MockHandler<T> mockHandler) {
 
+        MockCreationSettings<T> mockSettings = mockHandler.getMockSettings();
+        Class<T> typeToMock = mockSettings.getTypeToMock();
         bytecodeGenerator.mockClass(withMockFeatures(
-            mockHandler.getMockSettings().getTypeToMock(),
+            typeToMock,
             emptySet(),
             SerializableMode.NONE,
             false,
             true
         ));
-
+        MockMethodInterceptor mockMethodInterceptor = new MockMethodInterceptor(mockHandler, mockSettings);
+        mocks.put(typeToMock, mockMethodInterceptor);
     }
 
     @Override

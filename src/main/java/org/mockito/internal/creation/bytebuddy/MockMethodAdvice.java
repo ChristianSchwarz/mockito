@@ -4,19 +4,8 @@
  */
 package org.mockito.internal.creation.bytebuddy;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.Serializable;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.ref.SoftReference;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.concurrent.Callable;
-
 import net.bytebuddy.asm.Advice;
+import net.bytebuddy.asm.Advice.*;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.scaffold.MethodGraph;
@@ -32,6 +21,19 @@ import org.mockito.internal.invocation.SerializableMethod;
 import org.mockito.internal.invocation.mockref.MockReference;
 import org.mockito.internal.invocation.mockref.MockWeakReference;
 import org.mockito.internal.util.concurrent.WeakConcurrentMap;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.ref.SoftReference;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.concurrent.Callable;
+
+import static net.bytebuddy.implementation.bytecode.assign.Assigner.Typing.DYNAMIC;
 
 public class MockMethodAdvice extends MockMethodDispatcher {
 
@@ -50,11 +52,11 @@ public class MockMethodAdvice extends MockMethodDispatcher {
     }
 
     @SuppressWarnings("unused")
-    @Advice.OnMethodEnter(skipOn = Advice.OnNonDefaultValue.class)
+    @OnMethodEnter(skipOn = OnNonDefaultValue.class)
     private static Callable<?> enter(@Identifier String identifier,
                                      @Advice.This Object mock,
-                                     @Advice.Origin Method origin,
-                                     @Advice.AllArguments Object[] arguments) throws Throwable {
+                                     @Origin Method origin,
+                                     @AllArguments Object[] arguments) throws Throwable {
         MockMethodDispatcher dispatcher = MockMethodDispatcher.get(identifier, mock);
         if (dispatcher == null || !dispatcher.isMocked(mock) || dispatcher.isOverridden(mock, origin)) {
             return null;
@@ -64,9 +66,9 @@ public class MockMethodAdvice extends MockMethodDispatcher {
     }
 
     @SuppressWarnings({"unused", "UnusedAssignment"})
-    @Advice.OnMethodExit
-    private static void exit(@Advice.Return(readOnly = false, typing = Assigner.Typing.DYNAMIC) Object returned,
-                             @Advice.Enter Callable<?> mocked) throws Throwable {
+    @OnMethodExit
+    private static void exit(@Return(readOnly = false, typing = Assigner.Typing.DYNAMIC) Object returned,
+                             @Enter Callable<?> mocked) throws Throwable {
         if (mocked != null) {
             returned = mocked.call();
         }
@@ -99,16 +101,20 @@ public class MockMethodAdvice extends MockMethodDispatcher {
             return null;
         }
         RealMethod realMethod;
-        if (instance instanceof Serializable) {
+        boolean isSerializable = instance instanceof Serializable;
+        boolean isStaticMock = instance instanceof Class;
+        //^^ for static mocked classes we don't use a mock-object but there class object for identification
+
+        if (isSerializable && !isStaticMock) {
             realMethod = new SerializableRealMethodCall(identifier, origin, instance, arguments);
         } else {
             realMethod = new RealMethodCall(selfCallInfo, origin, instance, arguments);
         }
         return new ReturnValueWrapper(interceptor.doIntercept(instance,
-                origin,
-                arguments,
-                realMethod,
-                new LocationImpl(new Throwable(), true)));
+            origin,
+            arguments,
+            realMethod,
+            new LocationImpl(new Throwable(), true)));
     }
 
     @Override
@@ -259,7 +265,7 @@ public class MockMethodAdvice extends MockMethodDispatcher {
     static class ForHashCode {
 
         @SuppressWarnings("unused")
-        @Advice.OnMethodEnter(skipOn = Advice.OnNonDefaultValue.class)
+        @OnMethodEnter(skipOn = OnNonDefaultValue.class)
         private static boolean enter(@Identifier String id,
                                      @Advice.This Object self) {
             MockMethodDispatcher dispatcher = MockMethodDispatcher.get(id, self);
@@ -267,10 +273,10 @@ public class MockMethodAdvice extends MockMethodDispatcher {
         }
 
         @SuppressWarnings({"unused", "UnusedAssignment"})
-        @Advice.OnMethodExit
+        @OnMethodExit
         private static void enter(@Advice.This Object self,
-                                  @Advice.Return(readOnly = false) int hashCode,
-                                  @Advice.Enter boolean skipped) {
+                                  @Return(readOnly = false) int hashCode,
+                                  @Enter boolean skipped) {
             if (skipped) {
                 hashCode = System.identityHashCode(self);
             }
@@ -280,7 +286,7 @@ public class MockMethodAdvice extends MockMethodDispatcher {
     static class ForEquals {
 
         @SuppressWarnings("unused")
-        @Advice.OnMethodEnter(skipOn = Advice.OnNonDefaultValue.class)
+        @OnMethodEnter(skipOn = OnNonDefaultValue.class)
         private static boolean enter(@Identifier String identifier,
                                      @Advice.This Object self) {
             MockMethodDispatcher dispatcher = MockMethodDispatcher.get(identifier, self);
@@ -288,11 +294,11 @@ public class MockMethodAdvice extends MockMethodDispatcher {
         }
 
         @SuppressWarnings({"unused", "UnusedAssignment"})
-        @Advice.OnMethodExit
+        @OnMethodExit
         private static void enter(@Advice.This Object self,
                                   @Advice.Argument(0) Object other,
-                                  @Advice.Return(readOnly = false) boolean equals,
-                                  @Advice.Enter boolean skipped) {
+                                  @Return(readOnly = false) boolean equals,
+                                  @Enter boolean skipped) {
             if (skipped) {
                 equals = self == other;
             }
@@ -314,23 +320,56 @@ public class MockMethodAdvice extends MockMethodDispatcher {
     }
 
     public static class ForStatic {
-        @Advice.OnMethodEnter(skipOn = Advice.OnNonDefaultValue.class)
-        public static Callable<?> enter(@Advice.Origin final Method method,
-                                        @Advice.AllArguments final Object[] arguments
+        @OnMethodEnter(skipOn = OnNonDefaultValue.class)
+        public static Callable<?> enter(@Identifier String identifier,
+                                        @Origin final Method method,
+                                        @AllArguments final Object[] arguments
         ) throws Throwable {
 
-            System.out.println(method);
-            if (true) {
+            Object mock = method.getDeclaringClass();
+            MockMethodDispatcher dispatcher = MockMethodDispatcher.get(identifier, mock);
+            System.err.println(dispatcher);
+            if (dispatcher == null) {
                 return null;
             }
 
-            return new Callable<Object>() {
-                @Override
-                public Object call() throws Exception {
-                    System.out.println("-> " + Arrays.toString(arguments));
-                    return null;
-                }
-            };
+            return dispatcher.handle(mock, method, arguments);
+
+        }
+
+        @OnMethodExit
+        static void exit(@Return(readOnly = false, typing = DYNAMIC) Object returnValue,
+                         @Enter Callable<?> staticMethod) throws Throwable {
+            if (staticMethod != null) {
+                returnValue = staticMethod.call();
+            }
+        }
+    }
+
+    public static class ForStaticImpl {
+
+        public static Callable<?> enter(String identifier,
+                                        final Method method,
+                                        final Object[] arguments
+        ) throws Throwable {
+
+            Object mock = method.getDeclaringClass();
+            MockMethodDispatcher dispatcher = MockMethodDispatcher.get(identifier, mock);
+            System.err.println(dispatcher);
+            if (dispatcher == null) {
+                return null;
+            }
+
+            return dispatcher.handle(mock, method, arguments);
+
+        }
+
+
+        static void exit(Object returnValue,
+                         Callable<?> staticMethod) throws Throwable {
+            if (staticMethod != null) {
+                returnValue = staticMethod.call();
+            }
         }
     }
 }

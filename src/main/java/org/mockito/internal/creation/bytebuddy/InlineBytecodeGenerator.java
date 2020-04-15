@@ -120,8 +120,8 @@ public class InlineBytecodeGenerator implements BytecodeGenerator, ClassFileTran
             .method(isEquals(),
                 Advice.withCustomMapping()
                     .bind(MockMethodAdvice.Identifier.class, identifier)
-                    .to(MockMethodAdvice.ForEquals.class));
-        transformer
+                    .to(MockMethodAdvice.ForEquals.class))
+
             .method(isStatic().and(not(isTypeInitializer())).and(not(isConstructor())),
                 Advice.withCustomMapping()
                     .bind(MockMethodAdvice.Identifier.class, identifier)
@@ -161,7 +161,11 @@ public class InlineBytecodeGenerator implements BytecodeGenerator, ClassFileTran
     public <T> Class<? extends T> mockClass(MockFeatures<T> features) {
         boolean subclassingRequired = !features.interfaces.isEmpty()
             || features.serializableMode != SerializableMode.NONE
-            || Modifier.isAbstract(features.mockedType.getModifiers());
+            || Modifier.isAbstract(features.mockedType.getModifiers())
+            ;
+
+        //FIXME remove
+        subclassingRequired = true;
 
         checkSupportedCombination(subclassingRequired, features);
 
